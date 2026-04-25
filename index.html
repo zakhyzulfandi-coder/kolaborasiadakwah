@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>YKPI</title>
+    
+    <link rel="manifest" href="manifest.json">
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SIAP SMP">
+    <meta name="application-name" content="SIAP SMP">
+    <meta name="theme-color" content="#ffffff">
+    
+    <link rel="icon" href="https://zakhyzulfandi-coder.github.io/Rohis-Mutiara-Ilmu/LOGO-KDP.png" type="image/png">
+    <link rel="apple-touch-icon" href="https://zakhyzulfandi-coder.github.io/Rohis-Mutiara-Ilmu/LOGO-KDP.png">
+    
+    <style>
+        /* Mengatur halaman agar 100% penuh */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden; 
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Iframe embed */
+        iframe {
+            position: absolute;
+            top: -5px; /* Trik: Geser iframe 5 pixel ke atas untuk menyembunyikan loading bar Google */
+            left: 0;
+            width: 100vw;
+            height: calc(100vh + 5px); /* Tambahkan 5 pixel ke bawah agar layar tidak terpotong di bagian bawah */
+            border: none;
+            display: block;
+            z-index: 1;
+        }
+
+        /* --- Tampilan Layar Offline --- */
+        #offline-screen {
+            display: none; /* Sembunyikan secara default saat online */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(255, 255, 255, 0.95); /* Layar putih agak transparan */
+            backdrop-filter: blur(5px); /* Efek blur pada iframe di belakangnya */
+            z-index: 9999; /* Selalu tampil paling atas */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Animasi Ikon Wi-Fi Terputus */
+        .offline-icon {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            /* Ikon Wi-Fi Error (SVG Merah) */
+            background-image: url("data:image/svg+xml,%3Csvg fill='%23e74c3c' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M22.88 4.11a1 1 0 00-1.41 0L1 22.59a1 1 0 000 1.41 1 1 0 001.41 0l4.31-4.31A13.88 13.88 0 0012 21a14 14 0 0010.51-4.81 1 1 0 000-1.41zM12 19a11.83 11.83 0 01-3.86-.64l9.09-9.09A11.93 11.93 0 0112 19zM20.72 7.56L22 6.27a1 1 0 000-1.41 15.89 15.89 0 00-20.12-.51l2.58 2.58a12 12 0 0116.26.63zM16.59 11.69l1.64-1.64a10 10 0 00-12.44-.09l1.58 1.58a8 8 0 019.22.15z'/%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            /* Memanggil animasi bernafas (pulse) */
+            animation: pulse 1.5s infinite ease-in-out; 
+        }
+
+        /* Keyframes untuk animasi berkedip/memompa */
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.7; }
+        }
+
+        #offline-screen h2 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 24px;
+        }
+
+        #offline-screen p {
+            margin: 0;
+            color: #7f8c8d;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <iframe id="app-frame" src="https://script.google.com/macros/s/AKfycbzbHGvXwHUwDju-KxgvUtaHD0CWmnou97ZixVRJQHewTAkkdu4yvwMxyTVqBS6sgWtz/exec" title="Aplikasi SMP Darul Aman"></iframe>
+
+    <div id="offline-screen">
+        <div class="offline-icon"></div>
+        <h2>Koneksi Terputus</h2>
+        <p>Sepertinya Anda kehilangan koneksi internet.<br>Kami akan otomatis memuat ulang saat sinyal kembali.</p>
+    </div>
+
+    <script>
+        // 1. REGISTRASI SERVICE WORKER (ANTI-DINO)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                .then(registration => console.log('Service Worker terdaftar!'))
+                .catch(err => console.log('Pendaftaran Service Worker gagal: ', err));
+            });
+        }
+
+        // 2. LOGIKA LAYAR OFFLINE ANIMASI
+        const offlineScreen = document.getElementById('offline-screen');
+        const appFrame = document.getElementById('app-frame');
+
+        function checkNetworkStatus() {
+            if (navigator.onLine) {
+                offlineScreen.style.display = 'none';
+            } else {
+                offlineScreen.style.display = 'flex';
+            }
+        }
+
+        window.addEventListener('load', checkNetworkStatus);
+        window.addEventListener('offline', checkNetworkStatus);
+        window.addEventListener('online', () => {
+            checkNetworkStatus();
+            // Muat ulang iframe otomatis saat online kembali
+            appFrame.src = appFrame.src; 
+        });
+    </script>
+</body>
+</html>
